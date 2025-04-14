@@ -15,7 +15,7 @@ async function bootstrap() {
       },
     },
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen();
   console.log(`✅ Payment Service is listening on port ${PORT}`);
 }

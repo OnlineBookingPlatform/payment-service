@@ -6,13 +6,17 @@ import { typeOrmConfig } from './config/database.config';
 import { DatabaseModule } from './config/database.module';
 import { DataSource } from 'typeorm';
 import { VnpayModule } from './vnpay/vnpay.module';
+import { MomoModule } from './momo/momo.module';
+import { ZalopayModule } from './zalopay/zalopay.module';
 
 @Module({
   imports: [
     DatabaseModule,
     EnvironmentModule,
     PaymentModule,
-    VnpayModule
+    VnpayModule,
+    MomoModule,
+    ZalopayModule
   ],
 })
 export class AppModule implements OnModuleInit {
