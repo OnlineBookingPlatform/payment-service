@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Catch,
   ExceptionFilter,
@@ -6,30 +8,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { ApiResponse } from './api-response';
 
-class ApiResponse<T> {
-  status: number;
-  message: string;
-  result: T | null;
-
-  constructor(status: number, message: string, result: T | null = null) {
-    this.status = status;
-    this.message = message;
-    this.result = result;
-  }
-
-  static success<T>(result: T, message = 'Success'): ApiResponse<T> {
-    return new ApiResponse<T>(200, message, result);
-  }
-
-  static error<T>(
-    message = 'Error',
-    status = 500,
-    result: T | null = null,
-  ): ApiResponse<T> {
-    return new ApiResponse<T>(status, message, result);
-  }
-}
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -41,7 +21,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal Server Error';
-    let result: any = null;
+    let result = null;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -49,13 +29,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-      } else if (
-        typeof exceptionResponse === 'object' &&
-        'message' in exceptionResponse &&
-        'result' in exceptionResponse
-      ) {
-        message = (exceptionResponse.message as string) || message;
-        result = exceptionResponse.result || null;
+      } else if (typeof exceptionResponse === 'object') {
+        message = (exceptionResponse as any).message || message;
+        result = (exceptionResponse as any).result || null;
       }
     }
 
