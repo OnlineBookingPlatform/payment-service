@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
@@ -58,7 +59,7 @@ export class ZalopayService {
     }
   }
 
-  async callbackZaloPay(data: any): Promise<any> {
+  callbackZaloPay(data: any): any {
     const result = {
       return_code: 0, // Mặc định là thất bại
       return_message: '',
