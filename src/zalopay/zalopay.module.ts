@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ZalopayController } from './zalopay.controller';
 import { ZalopayService } from './zalopay.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TransactionHistory } from 'src/database/transaction_history.entity';
 
 @Module({
-  imports: [],
+  imports: [TypeOrmModule.forFeature([TransactionHistory])],
   controllers: [ZalopayController],
   providers: [ZalopayService],
   exports: [],
