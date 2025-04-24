@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -23,87 +24,59 @@ export class ZalopayService {
   };
 
   async createPayment(dataInfo: DTO_RQ_ZaloPay): Promise<any> {
-    console.log('ZaloPay dataInfo:', dataInfo);
+    console.log('🚀 Bắt đầu tạo payment với dataInfo:', dataInfo);
     const transID = Math.floor(Math.random() * 1000000);
     const app_trans_id = `${moment().format('YYMMDD')}_${transID}`;
-    // const embed_data = {
-    //   redirecturl: 'http://localhost:3000/payment-result',
-    // };
-    // const items = [{}];
+    console.log('🆔 Mã giao dịch app_trans_id:', app_trans_id);
+    const amount = dataInfo.ticket[ 0 ].price * dataInfo.ticket.length;
+    console.log('💰 Tổng số tiền:', amount);
+    const description = `Thanh toán vé ${dataInfo.ticket.map(item => item.seat_name)}`;
+    console.log('📝 Mô tả giao dịch:', description);
+
+
+    try {
+      const transaction = await this.paymentRepository.save({
+        order_id: app_trans_id,
+        amount,
+        status: 'pending',
+        account_id: dataInfo.account_id,
+        company_id: dataInfo.service_provider_id,
+        description,
+        created_at: new Date()
+      });
+      console.log('✅ Đã lưu transaction:', transaction);
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu transaction:', error);
+    }
+    
 
     const order: any = {
       app_id: this.config.app_id,
       app_trans_id,
       app_user: dataInfo.account_id,
       app_time: Date.now(),
-      item: JSON.stringify([]),
+      item: JSON.stringify(dataInfo.ticket),
       embed_data: JSON.stringify({}),
-      amount: dataInfo.ticket[0].price * dataInfo.ticket.length,
-      description: `Thanh toán vé ${dataInfo.ticket.map(
-        (item) => item.seat_name,
-      )}`,
+      amount,
+      description,
       bank_code: '',
+      // callback_url: this.config.callback_url
     };
 
-    const data = `${this.config.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
+    const data = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
     order.mac = CryptoJS.HmacSHA256(data, this.config.key1).toString();
 
-    try {
-      const response = await axios.post(this.config.endpoint, null, {
-        params: order,
-      });
-
-      return response.data;
-    } catch (error) {
-      throw new HttpException('Lỗi hệ thống', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  callbackZaloPay(data: any): any {
-    const result = {
-      return_code: 0, // Mặc định là thất bại
-      return_message: '',
+    console.log(`[DEV] Tạo payment giả lập: ${app_trans_id}`);
+    return {
+      return_code: 1,
+      return_message: 'Local mock payment created',
+      order_url: `http://localhost:3000/payment-method-2?app_trans_id=${app_trans_id}`,
+      app_trans_id,
+      amount,
+      is_local: true
     };
-
-    try {
-      // 1. Xác thực callback bằng MAC
-      const dataForMac = `${data.app_id}|${data.app_trans_id}|${data.appuser}|${data.amount}|${data.mac}`;
-      const mac = CryptoJS.HmacSHA256(dataForMac, this.config.key2).toString();
-
-      if (mac !== data.mac) {
-        result.return_message = 'Invalid MAC';
-        return result;
-      }
-
-      // 2. Xử lý logic thanh toán (không dùng database)
-      if (data.return_code === 1) {
-        // Thanh toán thành công
-        result.return_code = 1;
-        result.return_message = 'Success';
-
-        // Có thể log ra console để debug
-        console.log('Thanh toán thành công:', {
-          transactionId: data.app_trans_id,
-          userId: data.appuser,
-          amount: data.amount,
-          zaloTransId: data.zp_trans_id,
-        });
-      } else {
-        // Thanh toán thất bại
-        result.return_message = data.return_message || 'Payment failed';
-
-        console.log('Thanh toán thất bại:', {
-          transactionId: data.app_trans_id,
-          errorCode: data.return_code,
-          errorMessage: data.return_message,
-        });
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Lỗi xử lý callback:', error);
-      result.return_message = 'Server error';
-      return result;
-    }
+   
   }
 }
+
+
