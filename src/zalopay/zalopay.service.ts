@@ -20,19 +20,30 @@ export class ZalopayService {
     key1: 'PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL',
     key2: 'kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz',
     endpoint: 'https://sb-openapi.zalopay.vn/v2/create',
-    success_url: 'http://localhost:3000/payment-success',
+    success_url: 'http://localhost:3000/payment-method-2',
+    callback_url: 'https://8ace-2001-ee0-4f00-57d0-f4b5-6d0d-6d5-45c3.ngrok-free.app/v3/zalopay/callback',
   };
 
   async createPayment(dataInfo: DTO_RQ_ZaloPay): Promise<any> {
     console.log('🚀 Bắt đầu tạo payment với dataInfo:', dataInfo);
     const transID = Math.floor(Math.random() * 1000000);
     const app_trans_id = `${moment().format('YYMMDD')}_${transID}`;
-    console.log('🆔 Mã giao dịch app_trans_id:', app_trans_id);
-    const amount = dataInfo.ticket[ 0 ].price * dataInfo.ticket.length;
-    console.log('💰 Tổng số tiền:', amount);
-    const description = `Thanh toán vé ${dataInfo.ticket.map(item => item.seat_name)}`;
-    console.log('📝 Mô tả giao dịch:', description);
+    const amount = dataInfo.ticket.reduce((sum, item) => sum + item.price, 0);
+    const description = `Thanh toán vé ${dataInfo.ticket.map(t => t.seat_name).join(',')} - ${dataInfo.ticket.map(t => t.id).join(',')}`;
 
+
+    // Sửa phần item theo đúng chuẩn ZaloPay
+    const items = dataInfo.ticket.map(ticket => ({
+      itemid: ticket.id.toString(),
+      name: `Vé ${ticket.seat_name}`,
+      price: ticket.price,
+      quantity: 1
+    }));
+    const embed_data = {
+      redirecturl: this.config.success_url + "?app_trans_id=" + app_trans_id,
+    };
+    
+    
 
     try {
       const transaction = await this.paymentRepository.save({
@@ -42,41 +53,101 @@ export class ZalopayService {
         account_id: dataInfo.account_id,
         company_id: dataInfo.service_provider_id,
         description,
-        created_at: new Date()
+        created_at: new Date(),
       });
       console.log('✅ Đã lưu transaction:', transaction);
     } catch (error) {
       console.error('❌ Lỗi khi lưu transaction:', error);
+      return { return_code: 0, return_message: 'Lỗi khi lưu transaction' };
     }
-    
 
     const order: any = {
       app_id: this.config.app_id,
-      app_trans_id,
-      app_user: dataInfo.account_id,
-      app_time: Date.now(),
-      item: JSON.stringify(dataInfo.ticket),
-      embed_data: JSON.stringify({}),
-      amount,
-      description,
-      bank_code: '',
-      // callback_url: this.config.callback_url
+      app_trans_id: `${moment().format('YYMMDD')}_${transID}`,
+      app_user: "user123",
+      app_time: Date.now(), // miliseconds
+      item: JSON.stringify(items),
+      embed_data: JSON.stringify(embed_data),
+      amount: amount,
+      description: description,
+      bank_code: "",
+      callback_url: this.config.callback_url,
     };
+
+    console.log('📦 Dữ liệu order chuẩn:', order);
 
     const data = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
     order.mac = CryptoJS.HmacSHA256(data, this.config.key1).toString();
 
-    console.log(`[DEV] Tạo payment giả lập: ${app_trans_id}`);
-    return {
-      return_code: 1,
-      return_message: 'Local mock payment created',
-      order_url: `http://localhost:3000/payment-method-2?app_trans_id=${app_trans_id}`,
-      app_trans_id,
-      amount,
-      is_local: true
-    };
-   
+    try {
+      const { data } = await axios.post(this.config.endpoint, null, { params: order });
+      console.log('📬 Phản hồi từ ZaloPay:', data);
+
+      if (data.return_code === 1) {
+        console.log('✅ Thành công! Redirect tới ZaloPay:', data.order_url);
+        return { success: true, order_url: data.order_url, app_trans_id };
+      }
+
+      // Nếu có lỗi từ ZaloPay
+      console.error('❌ Lỗi từ ZaloPay:', data.return_message, data.sub_return_message);
+      return {
+        error: data.return_message,
+        sub_error: data.sub_return_message,
+        zalo_response: data // Trả cả response để debug
+      };
+    } catch (error) {
+      console.error('❌ Lỗi kết nối ZaloPay:', error.response?.data || error.message);
+      return {
+        error: 'Lỗi kết nối ZaloPay',
+        detail: error.response?.data || error.message
+      };
+    }
+
   }
+
+  async callbackZaloPay(data: any): Promise<any> {
+    console.log('🚀 Bắt đầu xử lý callback ZaloPay với data:', data);
+
+    const result: any = {};
+    try {
+      const dataStr = data.data;
+      const reqMac = data.mac;
+
+      const mac = CryptoJS.HmacSHA256(dataStr, this.config.key2).toString();
+      console.log('mac =', mac);
+
+      if (reqMac !== mac) {
+        result.return_code = -1;
+        result.return_message = 'mac not equal';
+      } else {
+        const dataJson = JSON.parse(dataStr);
+        const app_trans_id = dataJson['app_trans_id'];
+
+        console.log("✅ Xác thực MAC thành công, cập nhật trạng thái đơn:", app_trans_id);
+
+        // 🎯 Cập nhật trạng thái đơn trong database:
+        await this.paymentRepository.update(
+          { order_id: app_trans_id },
+          { status: 'success' }
+        );
+
+        result.return_code = 1;
+        result.return_message = 'success';
+      }
+    } catch (ex) {
+      console.error('❌ Lỗi callback xử lý:', ex.message);
+      result.return_code = 0; // ZaloPay server sẽ callback lại tối đa 3 lần
+      result.return_message = ex.message;
+    }
+    return result;
+  }
+
+  async checkPayment(data: any): Promise<any> {
+    console.log('🚀 Bắt đầu kiểm tra thanh toán với data:', data);
+  }
+
+
+
 }
 
 

@@ -21,4 +21,24 @@ export class ZalopayController {
       return handleError(error);
     }
   }
+
+  @MessagePattern('callback_zalopay')
+  async callbackZaloPay(@Payload() data: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.zalopayService.callbackZaloPay(data);
+      return ApiResponse.success(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  @MessagePattern('check_payment')
+  async checkPayment(@Payload() data: any): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.zalopayService.checkPayment(data);
+      return ApiResponse.success(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
 }
