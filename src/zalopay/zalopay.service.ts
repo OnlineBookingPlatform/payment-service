@@ -21,7 +21,7 @@ export class ZalopayService {
     key2: 'kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz',
     endpoint: 'https://sb-openapi.zalopay.vn/v2/create',
     success_url: 'http://localhost:3000/payment-method-2',
-    callback_url: 'https://8ace-2001-ee0-4f00-57d0-f4b5-6d0d-6d5-45c3.ngrok-free.app/v3/zalopay/callback',
+    callback_url: 'https://5519-2001-ee0-4f00-57d0-2c7d-de02-b055-7534.ngrok-free.app/v3/zalopay/callback',
   };
 
   async createPayment(dataInfo: DTO_RQ_ZaloPay): Promise<any> {
@@ -133,6 +133,7 @@ export class ZalopayService {
 
         result.return_code = 1;
         result.return_message = 'success';
+        console.log('✅ Cập nhật trạng thái thành công:', result.return_message);
       }
     } catch (ex) {
       console.error('❌ Lỗi callback xử lý:', ex.message);
@@ -142,9 +143,10 @@ export class ZalopayService {
     return result;
   }
 
-  async checkPayment(data: any): Promise<any> {
-    console.log('🚀 Bắt đầu kiểm tra thanh toán với data:', data);
-  }
+  // async checkPayment(data: any): Promise<any> {
+  //   console.log('🚀 Bắt đầu kiểm tra thanh toán với data:', data);
+  //   return null;
+  // }
 
 
 
