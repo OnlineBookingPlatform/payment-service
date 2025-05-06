@@ -4,7 +4,7 @@ import { DTO_RQ_CheckMomoPayment, DTO_RQ_Momo, DTO_RQ_Ticket } from './momo.dto'
 import * as crypto from 'crypto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { TransactionHistory } from 'src/database/transaction_history.entity';
+import { TransactionHistory } from 'src/transaction/transaction_history.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -100,6 +100,8 @@ export class MomoService {
           status: 'pending',
           account_id: data.creator_by_id,
           company_id: data.service_provider_id,
+          email: data.email,
+          phone: data.passenger_phone,
           description,
           created_at: new Date(),
         });

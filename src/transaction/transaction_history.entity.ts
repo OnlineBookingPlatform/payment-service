@@ -26,4 +26,10 @@ export class TransactionHistory {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
+  @Column()
+  email: string;
+
+  @Column()
+  phone: string;
+
 }

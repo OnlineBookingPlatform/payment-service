@@ -3,7 +3,7 @@ import { MomoController } from './momo.controller';
 import { MomoService } from './momo.service';
 import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TransactionHistory } from 'src/database/transaction_history.entity';
+import { TransactionHistory } from 'src/transaction/transaction_history.entity';
 
 @Module({
   imports: [HttpModule, TypeOrmModule.forFeature([TransactionHistory])],

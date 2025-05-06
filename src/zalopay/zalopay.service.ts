@@ -9,7 +9,7 @@ import moment from 'moment';
 import { DTO_RQ_ZaloPay } from './zalopay.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TransactionHistory } from 'src/database/transaction_history.entity';
+import { TransactionHistory } from 'src/transaction/transaction_history.entity';
 
 @Injectable()
 export class ZalopayService {

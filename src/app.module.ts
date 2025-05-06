@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { VnpayModule } from './vnpay/vnpay.module';
 import { MomoModule } from './momo/momo.module';
 import { ZalopayModule } from './zalopay/zalopay.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { ZalopayModule } from './zalopay/zalopay.module';
     PaymentModule,
     VnpayModule,
     MomoModule,
-    ZalopayModule
+    ZalopayModule,
+    TransactionModule
   ],
 })
 export class AppModule implements OnModuleInit {
